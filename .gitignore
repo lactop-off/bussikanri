@@ -1,0 +1,22 @@
+# env / secrets
+.env
+*.env.local
+
+# python
+backend/.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.db
+
+# node
+frontend/node_modules/
+frontend/dist/
+frontend/dev-dist/
+
+# misc
+.DS_Store
+*.log
+
+# build artifacts
+frontend/tsconfig.tsbuildinfo

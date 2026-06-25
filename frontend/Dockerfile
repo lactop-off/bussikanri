@@ -1,0 +1,12 @@
+# フロントエンド(PWA)をビルドし、Caddy で静的配信 + API リバースプロキシする。
+# ビルドコンテキストはリポジトリルート（Caddyfile を含めるため）。
+FROM node:22-slim AS build
+WORKDIR /app
+COPY frontend/package.json frontend/package-lock.json* ./
+RUN npm ci || npm install
+COPY frontend/ .
+RUN npm run build
+
+FROM caddy:2
+COPY --from=build /app/dist /srv
+COPY Caddyfile /etc/caddy/Caddyfile

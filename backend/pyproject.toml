@@ -1,0 +1,14 @@
+[project]
+name = "karidasu-api"
+version = "1.0.0"
+description = "Karidasu — 備品・資産 貸出/管理システム (backend API)"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"

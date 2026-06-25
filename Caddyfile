@@ -1,0 +1,32 @@
+# Karidasu リバースプロキシ / 静的配信（設計書 §8）。
+# {$SITE_ADDRESS} を環境変数で指定。既定はローカルの :80。
+# 公開ドメインを設定すると Caddy が自動で TLS 証明書を取得する。
+{$SITE_ADDRESS::80} {
+	encode gzip zstd
+
+	# API はバックエンドへ転送。
+	handle /api/* {
+		reverse_proxy api:8000
+	}
+	handle /healthz {
+		reverse_proxy api:8000
+	}
+	handle /readyz {
+		reverse_proxy api:8000
+	}
+
+	# それ以外は SPA（PWA）を配信。未知パスは index.html にフォールバック。
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+
+	header {
+		# 基本的なセキュリティヘッダ（設計書 §11）。
+		Strict-Transport-Security "max-age=31536000;"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+	}
+}

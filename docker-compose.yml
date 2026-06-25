@@ -1,0 +1,73 @@
+# Karidasu セルフホスト構成（設計書 §8.2 / §8.3）。
+#   git clone → cp .env.example .env → 編集 → docker compose up -d
+services:
+  web:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    environment:
+      # 公開ドメインを設定すると Caddy が自動 TLS。未設定ならローカル :80。
+      SITE_ADDRESS: ${SITE_ADDRESS:-:80}
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  api:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+psycopg://app:${POSTGRES_PASSWORD:-app}@db:5432/karidasu
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET を .env に設定してください}
+      DEFAULT_LOAN_DAYS: ${DEFAULT_LOAN_DAYS:-14}
+      ASSET_TAG_PREFIX: ${ASSET_TAG_PREFIX:-KRD-}
+      ORG_NAME: ${ORG_NAME:-Karidasu}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      ADMIN_NAME: ${ADMIN_NAME:-管理者}
+      CORS_ORIGINS: ${CORS_ORIGINS:-*}
+    volumes:
+      - app_media:/app/media
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  worker:
+    build: ./backend
+    command: ["python", "-m", "app.worker"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://app:${POSTGRES_PASSWORD:-app}@db:5432/karidasu
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET を .env に設定してください}
+      REMINDER_CRON: ${REMINDER_CRON:-0 9 * * *}
+      SMTP_URL: ${SMTP_URL:-}
+      MAIL_FROM: ${MAIL_FROM:-karidasu@example.com}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-app}
+      POSTGRES_DB: karidasu
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d karidasu"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  caddy_data: {}
+  caddy_config: {}
+  db_data: {}
+  app_media: {}
