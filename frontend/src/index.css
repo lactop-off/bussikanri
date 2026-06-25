@@ -69,6 +69,147 @@ button:disabled {
   padding: 0.3rem;
   font-size: 0.8rem;
 }
+.link-btn.dark {
+  color: var(--teal);
+}
+
+/* ---- notification bell ---- */
+.bell {
+  position: relative;
+}
+.bell-btn {
+  background: none;
+  padding: 0.2rem 0.3rem;
+  font-size: 1.1rem;
+  position: relative;
+}
+.bell-badge {
+  position: absolute;
+  top: -2px;
+  right: -4px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 0 4px;
+  min-width: 14px;
+  text-align: center;
+}
+.bell-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+}
+.bell-panel {
+  position: absolute;
+  top: 2.2rem;
+  right: 0;
+  width: 280px;
+  max-height: 60vh;
+  overflow-y: auto;
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+  z-index: 51;
+}
+.bell-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 0.8rem;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--card);
+}
+.bell-empty {
+  padding: 1rem 0.8rem;
+}
+.bell-panel ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.bell-panel li {
+  padding: 0.6rem 0.8rem;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+.bell-panel li.unread {
+  background: #f0fdfa;
+}
+.bell-panel li p {
+  margin: 0 0 0.2rem;
+}
+
+/* ---- tabs / panels ---- */
+.tabs {
+  display: flex;
+  gap: 0.3rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1rem;
+  overflow-x: auto;
+}
+.tabs button {
+  background: none;
+  border-radius: 0;
+  border-bottom: 2px solid transparent;
+  padding: 0.6rem 0.8rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.tabs button.active {
+  color: var(--teal);
+  border-bottom-color: var(--teal);
+  font-weight: 600;
+}
+.master-items {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 0.8rem;
+}
+.master-items li {
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.master-add {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+.master-add input {
+  flex: 2;
+  min-width: 120px;
+}
+.master-add select {
+  flex: 1;
+  min-width: 100px;
+}
+.report-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.6rem 0;
+}
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+.settings-form label,
+.audit .card label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.audit .card label {
+  margin-bottom: 0.7rem;
+}
 
 input,
 select {

@@ -34,7 +34,7 @@ from ..schemas import (
     CheckoutRequest,
     LoanOut,
 )
-from ..services import audit_log
+from ..services import audit_log, settings_store
 
 router = APIRouter(prefix="/assets", tags=["assets"])
 settings = get_settings()
@@ -42,7 +42,7 @@ settings = get_settings()
 
 def _generate_asset_tag(db: Session) -> str:
     """プレフィックス + 6桁連番で asset_tag を自動採番する（設計書 FR-2.3 / 付録B）。"""
-    prefix = settings.asset_tag_prefix
+    prefix = settings_store.get_row(db).asset_tag_prefix
     like = f"{prefix}%"
     max_seq = 0
     for (tag,) in db.execute(select(Asset.asset_tag).where(Asset.asset_tag.like(like))):
@@ -233,7 +233,8 @@ def checkout(
             detail={"code": "ASSET_NOT_AVAILABLE", "message": f"この資産は貸出できません（状態: {asset.status.value}）"},
         )
 
-    due_at = body.due_at or (utcnow() + timedelta(days=settings.default_loan_days))
+    loan_days = settings_store.get_row(db).default_loan_days
+    due_at = body.due_at or (utcnow() + timedelta(days=loan_days))
     loan = Loan(
         asset_id=asset.id,
         borrower_id=borrower.id,

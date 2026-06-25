@@ -302,6 +302,24 @@ class NotificationOut(ORMModel):
 # ---- dashboard ------------------------------------------------------------
 
 
+class SettingsOut(ORMModel):
+    org_name: str
+    default_loan_days: int
+    reminder_cron: str
+    asset_tag_prefix: str
+    reminder_due_template: str
+    reminder_overdue_template: str
+
+
+class SettingsUpdate(BaseModel):
+    org_name: str | None = None
+    default_loan_days: int | None = Field(default=None, ge=1, le=3650)
+    reminder_cron: str | None = None
+    asset_tag_prefix: str | None = None
+    reminder_due_template: str | None = None
+    reminder_overdue_template: str | None = None
+
+
 class DashboardOut(BaseModel):
     total_assets: int
     checked_out: int

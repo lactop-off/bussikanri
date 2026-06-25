@@ -266,3 +266,10 @@ class AppSetting(Base):
     reminder_cron: Mapped[str] = mapped_column(String(64), default="0 9 * * *")
     smtp_config: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     asset_tag_prefix: Mapped[str] = mapped_column(String(32), default="KRD-")
+    # 督促文面テンプレート（FR-6.3）。{asset} {due} を差し込む。
+    reminder_due_template: Mapped[str] = mapped_column(
+        Text, default="資産「{asset}」の返却期限（{due}）が近づいています"
+    )
+    reminder_overdue_template: Mapped[str] = mapped_column(
+        Text, default="資産「{asset}」の返却期限（{due}）を超過しています"
+    )

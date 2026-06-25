@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { api } from "../api";
 import { downloadFile } from "../download";
 import { canManage, useAuth } from "../auth";
+import { useMasters } from "../useMasters";
 import type { Asset, Page } from "../types";
 import { STATUS_LABEL, STATUS_CLASS, fmtDate } from "../statusLabels";
 
@@ -124,7 +125,17 @@ export default function Assets() {
 }
 
 function CreateAssetModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
-  const [form, setForm] = useState({ name: "", asset_tag: "", manufacturer: "", model: "", serial_no: "" });
+  const { categories, locations } = useMasters();
+  const [form, setForm] = useState({
+    name: "",
+    asset_tag: "",
+    tag_type: "qr",
+    category_id: "",
+    home_location_id: "",
+    manufacturer: "",
+    model: "",
+    serial_no: "",
+  });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -133,8 +144,8 @@ function CreateAssetModal({ onClose, onCreated }: { onClose: () => void; onCreat
     setBusy(true);
     setError(null);
     try {
-      const body: Record<string, string> = { name: form.name };
-      for (const k of ["asset_tag", "manufacturer", "model", "serial_no"] as const) {
+      const body: Record<string, string> = { name: form.name, tag_type: form.tag_type };
+      for (const k of ["asset_tag", "category_id", "home_location_id", "manufacturer", "model", "serial_no"] as const) {
         if (form[k]) body[k] = form[k];
       }
       await api("/assets", { method: "POST", body });
@@ -161,8 +172,41 @@ function CreateAssetModal({ onClose, onCreated }: { onClose: () => void; onCreat
             <input
               value={form.asset_tag}
               onChange={(e) => setForm({ ...form, asset_tag: e.target.value })}
-              placeholder="KRD-000123"
+              placeholder="KRD-000123 / 既存バーコード可"
             />
+          </label>
+          <label>
+            コード種別
+            <select value={form.tag_type} onChange={(e) => setForm({ ...form, tag_type: e.target.value })}>
+              <option value="qr">QR</option>
+              <option value="code128">CODE128（バーコード）</option>
+              <option value="ean">EAN（製品バーコード）</option>
+            </select>
+          </label>
+          <label>
+            カテゴリ
+            <select value={form.category_id} onChange={(e) => setForm({ ...form, category_id: e.target.value })}>
+              <option value="">（未設定）</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            保管場所（ホーム）
+            <select
+              value={form.home_location_id}
+              onChange={(e) => setForm({ ...form, home_location_id: e.target.value })}
+            >
+              <option value="">（未設定）</option>
+              {locations.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {l.name}
+                </option>
+              ))}
+            </select>
           </label>
           <label>
             メーカー

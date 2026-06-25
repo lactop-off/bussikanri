@@ -8,7 +8,7 @@ import Assets from "./pages/Assets";
 import AssetDetail from "./pages/AssetDetail";
 import Loans from "./pages/Loans";
 import Audit from "./pages/Audit";
-import Users from "./pages/Users";
+import Manage from "./pages/Manage";
 import type { ReactNode } from "react";
 
 function Protected({ children, manager, admin }: { children: ReactNode; manager?: boolean; admin?: boolean }) {
@@ -75,10 +75,10 @@ export default function App() {
             }
           />
           <Route
-            path="/admin/users"
+            path="/manage"
             element={
-              <Protected admin>
-                <Users />
+              <Protected manager>
+                <Manage />
               </Protected>
             }
           />

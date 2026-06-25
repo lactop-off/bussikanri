@@ -1,15 +1,20 @@
 import { useEffect, useState } from "react";
 import Scanner from "../components/Scanner";
 import { api } from "../api";
+import { downloadFile } from "../download";
 import { offlineQueue } from "../offline";
+import { useMasters } from "../useMasters";
 import type { AuditReport } from "../types";
 import { STATUS_LABEL } from "../statusLabels";
 
 // 棚卸モード（設計書 FR-5 / §10.3）。連続スキャンで台帳照合、オフライン退避対応。
 export default function Audit() {
+  const { categories, locations } = useMasters();
   const [audits, setAudits] = useState<{ id: string; name: string; status: string }[]>([]);
   const [report, setReport] = useState<AuditReport | null>(null);
   const [name, setName] = useState("");
+  const [scope, setScope] = useState<"all" | "category" | "location">("all");
+  const [scopeRef, setScopeRef] = useState("");
   const [recent, setRecent] = useState<string[]>([]);
 
   async function loadList() {
@@ -22,11 +27,14 @@ export default function Audit() {
 
   async function create() {
     if (!name.trim()) return;
+    if (scope !== "all" && !scopeRef) return;
     const a = await api<{ id: string }>("/audits", {
       method: "POST",
-      body: { name: name.trim(), scope: "all" },
+      body: { name: name.trim(), scope, scope_ref_id: scope === "all" ? null : scopeRef },
     });
     setName("");
+    setScope("all");
+    setScopeRef("");
     await loadList();
     open(a.id);
   }
@@ -68,11 +76,41 @@ export default function Audit() {
       <div className="audit">
         <h2>棚卸</h2>
         <div className="card">
-          <h3>新規棚卸（全体）</h3>
-          <div className="manual">
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="棚卸名（例: 2026年6月 会議室A）" />
-            <button onClick={create}>開始</button>
-          </div>
+          <h3>新規棚卸</h3>
+          <label>
+            棚卸名
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="例: 2026年6月 会議室A" />
+          </label>
+          <label>
+            対象範囲
+            <select
+              value={scope}
+              onChange={(e) => {
+                setScope(e.target.value as typeof scope);
+                setScopeRef("");
+              }}
+            >
+              <option value="all">全体</option>
+              <option value="category">カテゴリ</option>
+              <option value="location">保管場所</option>
+            </select>
+          </label>
+          {scope !== "all" && (
+            <label>
+              {scope === "category" ? "カテゴリ" : "保管場所"}を選択
+              <select value={scopeRef} onChange={(e) => setScopeRef(e.target.value)}>
+                <option value="">（選択してください）</option>
+                {(scope === "category" ? categories : locations).map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          <button className="primary block" onClick={create} disabled={!name.trim() || (scope !== "all" && !scopeRef)}>
+            開始
+          </button>
         </div>
         <h3>過去の棚卸</h3>
         <ul className="audit-list">
@@ -95,9 +133,19 @@ export default function Audit() {
     <div className="audit">
       <div className="page-head">
         <h2>{report.audit.name}</h2>
-        <button className="ghost small" onClick={() => setReport(null)}>
-          ← 一覧
-        </button>
+        <div className="toolbar">
+          <button
+            className="ghost small"
+            onClick={() =>
+              downloadFile(`/reports/audit.csv?audit_id=${report.audit.id}`, `audit-${report.audit.id}.csv`)
+            }
+          >
+            ⬇ CSV
+          </button>
+          <button className="ghost small" onClick={() => setReport(null)}>
+            ← 一覧
+          </button>
+        </div>
       </div>
 
       <div className="audit-stats">

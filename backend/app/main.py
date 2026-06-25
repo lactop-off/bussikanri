@@ -23,6 +23,7 @@ from .routers import (
     maintenance,
     masters,
     reports,
+    settings as settings_router,
     users,
 )
 
@@ -93,5 +94,5 @@ def readyz():
 
 
 # ルーター登録。
-for r in (auth, users, assets, loans, masters, maintenance, audits, labels, reports, dashboard):
+for r in (auth, users, assets, loans, masters, maintenance, audits, labels, reports, dashboard, settings_router):
     app.include_router(r.router, prefix=API_PREFIX)

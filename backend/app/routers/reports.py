@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from ..db import get_db
 from ..deps import require_manager
-from ..models import Asset, Category, Location, Loan, User
+from ..models import ActivityLog, Asset, AuditItem, Category, Location, Loan, User
 from ..services import audit_log
 
 router = APIRouter(tags=["reports"])
@@ -37,7 +37,12 @@ def _csv_response(filename: str, header: list[str], rows: list[list]) -> Streami
 
 
 @router.get("/reports/{report_type}.csv")
-def export_csv(report_type: str, db: Session = Depends(get_db), _: User = Depends(require_manager)):
+def export_csv(
+    report_type: str,
+    audit_id: str | None = None,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_manager),
+):
     if report_type == "assets":
         rows = []
         for a in db.scalars(select(Asset).order_by(Asset.asset_tag)).all():
@@ -64,6 +69,39 @@ def export_csv(report_type: str, db: Session = Depends(get_db), _: User = Depend
         return _csv_response(
             "loans.csv",
             ["asset_tag", "asset_name", "borrower", "checkout_at", "due_at", "checkin_at", "status"],
+            rows,
+        )
+    if report_type == "audit":
+        # 棚卸結果（FR-8.1）。audit_id 必須。
+        if not audit_id:
+            raise HTTPException(
+                status_code=400, detail={"code": "AUDIT_ID_REQUIRED", "message": "audit_id を指定してください"}
+            )
+        rows = []
+        result_ja = {"found": "発見", "missing": "欠品", "unexpected": "想定外"}
+        for it in db.scalars(select(AuditItem).where(AuditItem.audit_id == audit_id)).all():
+            rows.append([
+                it.asset.asset_tag, it.asset.name, result_ja.get(it.result.value, it.result.value),
+                it.asset.status.value, it.scanned_at.isoformat() if it.scanned_at else "",
+            ])
+        return _csv_response(
+            f"audit_{audit_id}.csv",
+            ["asset_tag", "asset_name", "result", "asset_status", "scanned_at"],
+            rows,
+        )
+    if report_type == "activity":
+        # 操作履歴（FR-8.1 / FR-9）。直近5000件。
+        rows = []
+        for log in db.scalars(
+            select(ActivityLog).order_by(ActivityLog.created_at.desc()).limit(5000)
+        ).all():
+            rows.append([
+                log.created_at.isoformat(), log.actor_id or "", log.entity_type,
+                log.entity_id or "", log.action,
+            ])
+        return _csv_response(
+            "activity.csv",
+            ["created_at", "actor_id", "entity_type", "entity_id", "action"],
             rows,
         )
     raise HTTPException(status_code=404, detail={"code": "UNKNOWN_REPORT", "message": "未知のレポート種別です"})

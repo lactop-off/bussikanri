@@ -2,6 +2,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth, canManage } from "../auth";
 import { offlineQueue } from "../offline";
+import NotificationBell from "./NotificationBell";
 
 const NAV = [
   { to: "/", label: "スキャン", icon: "📷", roles: ["member", "manager", "admin"] },
@@ -9,7 +10,7 @@ const NAV = [
   { to: "/assets", label: "資産", icon: "📦", roles: ["member", "manager", "admin"] },
   { to: "/loans", label: "貸出", icon: "📋", roles: ["member", "manager", "admin"] },
   { to: "/audit", label: "棚卸", icon: "✅", roles: ["manager", "admin"] },
-  { to: "/admin/users", label: "ユーザー", icon: "👥", roles: ["admin"] },
+  { to: "/manage", label: "管理", icon: "⚙️", roles: ["manager", "admin"] },
 ];
 
 export default function Layout({ children }: { children: ReactNode }) {
@@ -41,6 +42,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         <div className="topbar-right">
           {!online && <span className="badge offline">オフライン</span>}
           {queued > 0 && <span className="badge pending">保留中 {queued}</span>}
+          <NotificationBell />
           <span className="user">{user?.name}</span>
           <button className="link-btn" onClick={logout}>
             ログアウト

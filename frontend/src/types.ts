@@ -82,6 +82,23 @@ export interface Master {
   parent_id: string | null;
 }
 
+export interface AppSettings {
+  org_name: string;
+  default_loan_days: number;
+  reminder_cron: string;
+  asset_tag_prefix: string;
+  reminder_due_template: string;
+  reminder_overdue_template: string;
+}
+
+export interface Notification {
+  id: string;
+  type: "due_soon" | "overdue" | "system";
+  payload: string | null;
+  sent_at: string;
+  read_at: string | null;
+}
+
 export interface Dashboard {
   total_assets: number;
   checked_out: number;
