@@ -5,15 +5,18 @@ import Login from "./pages/Login";
 import Scan from "./pages/Scan";
 import Dashboard from "./pages/Dashboard";
 import Assets from "./pages/Assets";
+import AssetDetail from "./pages/AssetDetail";
 import Loans from "./pages/Loans";
 import Audit from "./pages/Audit";
+import Users from "./pages/Users";
 import type { ReactNode } from "react";
 
-function Protected({ children, manager }: { children: ReactNode; manager?: boolean }) {
+function Protected({ children, manager, admin }: { children: ReactNode; manager?: boolean; admin?: boolean }) {
   const { user, loading } = useAuth();
   if (loading) return <div className="splash">読み込み中…</div>;
   if (!user) return <Navigate to="/login" replace />;
   if (manager && !canManage(user)) return <Navigate to="/" replace />;
+  if (admin && user.role !== "admin") return <Navigate to="/" replace />;
   return <Layout>{children}</Layout>;
 }
 
@@ -48,6 +51,14 @@ export default function App() {
             }
           />
           <Route
+            path="/assets/:id"
+            element={
+              <Protected>
+                <AssetDetail />
+              </Protected>
+            }
+          />
+          <Route
             path="/loans"
             element={
               <Protected>
@@ -60,6 +71,14 @@ export default function App() {
             element={
               <Protected manager>
                 <Audit />
+              </Protected>
+            }
+          />
+          <Route
+            path="/admin/users"
+            element={
+              <Protected admin>
+                <Users />
               </Protected>
             }
           />

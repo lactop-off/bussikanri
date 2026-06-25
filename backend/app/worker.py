@@ -87,9 +87,7 @@ def _cron_kwargs(expr: str) -> dict:
 
 
 def main() -> None:
-    from .bootstrap import init_db
-
-    init_db()
+    # スキーマ作成・初期データ投入は api コンテナが担う（worker は監視のみ）。
     scheduler = BlockingScheduler(timezone="UTC")
     try:
         trigger = CronTrigger(**_cron_kwargs(settings.reminder_cron), timezone="UTC")

@@ -63,6 +63,25 @@ export interface Loan {
   borrower: { id: string; name: string };
 }
 
+export interface MaintenanceRecord {
+  id: string;
+  asset_id: string;
+  type: "inspection" | "repair" | "calibration";
+  reported_at: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  cost: number | null;
+  vendor: string | null;
+  description: string | null;
+  status: "open" | "in_progress" | "done";
+}
+
+export interface Master {
+  id: string;
+  name: string;
+  parent_id: string | null;
+}
+
 export interface Dashboard {
   total_assets: number;
   checked_out: number;

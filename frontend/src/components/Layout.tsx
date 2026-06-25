@@ -9,6 +9,7 @@ const NAV = [
   { to: "/assets", label: "資産", icon: "📦", roles: ["member", "manager", "admin"] },
   { to: "/loans", label: "貸出", icon: "📋", roles: ["member", "manager", "admin"] },
   { to: "/audit", label: "棚卸", icon: "✅", roles: ["manager", "admin"] },
+  { to: "/admin/users", label: "ユーザー", icon: "👥", roles: ["admin"] },
 ];
 
 export default function Layout({ children }: { children: ReactNode }) {
@@ -48,12 +49,15 @@ export default function Layout({ children }: { children: ReactNode }) {
       </header>
       <main className="content">{children}</main>
       <nav className="bottomnav">
-        {nav.map((n) => (
-          <Link key={n.to} to={n.to} className={loc.pathname === n.to ? "active" : ""}>
+        {nav.map((n) => {
+          const active = n.to === "/" ? loc.pathname === "/" : loc.pathname.startsWith(n.to);
+          return (
+          <Link key={n.to} to={n.to} className={active ? "active" : ""}>
             <span className="nav-icon">{n.icon}</span>
             <span className="nav-label">{n.label}</span>
           </Link>
-        ))}
+          );
+        })}
       </nav>
     </div>
   );

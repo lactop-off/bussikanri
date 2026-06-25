@@ -49,6 +49,16 @@ uvicorn app.main:app --reload      # http://localhost:8000 — OpenAPI: /docs
 pytest                              # テスト
 ```
 
+**マイグレーション（Alembic）**: 本番(PostgreSQL)では api コンテナが起動時に
+`alembic upgrade head` を自動適用する。モデル変更時は新リビジョンを作成する。
+```bash
+alembic revision --autogenerate -m "説明"   # 差分から生成
+alembic upgrade head                          # 適用
+alembic check                                 # モデルとマイグレーションの差分検出（CIでも実行）
+```
+SQLite（ローカル/テスト）ではアプリ起動時に `create_all` でテーブルを用意するため、
+マイグレーションは不要。
+
 **フロントエンド**
 ```bash
 cd frontend
@@ -68,6 +78,12 @@ npm run build
 - QRラベルPDF発行（市販ラベルシート面付け）・CSVエクスポート/インポート
 - ダッシュボードKPI・監査ログ（追記専用）
 - PWA：カメラスキャン（@zxing）・オフライン操作キュー・自動同期
+
+## CI
+
+`.github/workflows/ci.yml` で push / PR ごとに次を実行：
+- backend: マイグレーション適用 + `alembic check`（モデル差分検出）+ pytest
+- frontend: 型チェック + 本番ビルド
 
 ## ドキュメント
 

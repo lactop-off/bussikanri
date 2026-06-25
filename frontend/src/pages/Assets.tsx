@@ -1,15 +1,40 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { api } from "../api";
+import { downloadFile } from "../download";
 import { canManage, useAuth } from "../auth";
 import type { Asset, Page } from "../types";
 import { STATUS_LABEL, STATUS_CLASS, fmtDate } from "../statusLabels";
 
 export default function Assets() {
   const { user } = useAuth();
+  const manager = canManage(user);
   const [q, setQ] = useState("");
   const [data, setData] = useState<Page<Asset> | null>(null);
   const [page, setPage] = useState(1);
   const [creating, setCreating] = useState(false);
+  const [importMsg, setImportMsg] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  async function onImport(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const fd = new FormData();
+    fd.append("file", file);
+    try {
+      const r = await api<{ created: number; skipped: number; errors: string[] }>("/imports/assets", {
+        method: "POST",
+        body: fd,
+      });
+      setImportMsg(`登録 ${r.created} 件 / スキップ ${r.skipped} 件${r.errors.length ? ` / エラー ${r.errors.length}` : ""}`);
+      setPage(1);
+      load();
+    } catch (err) {
+      setImportMsg((err as Error).message);
+    } finally {
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  }
 
   async function load() {
     const params = new URLSearchParams({ page: String(page), size: "20" });
@@ -34,12 +59,25 @@ export default function Assets() {
     <div className="assets">
       <div className="page-head">
         <h2>資産一覧</h2>
-        {canManage(user) && (
+        {manager && (
           <button className="primary small" onClick={() => setCreating(true)}>
             ＋ 登録
           </button>
         )}
       </div>
+
+      {manager && (
+        <div className="toolbar">
+          <button className="ghost small" onClick={() => downloadFile("/reports/assets.csv", "assets.csv")}>
+            ⬇ CSV出力
+          </button>
+          <button className="ghost small" onClick={() => fileRef.current?.click()}>
+            ⬆ CSV取込
+          </button>
+          <input ref={fileRef} type="file" accept=".csv" hidden onChange={onImport} />
+        </div>
+      )}
+      {importMsg && <div className="toast ok">{importMsg}</div>}
 
       <form className="manual" onSubmit={search}>
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="名称 / 管理番号 / 型番で検索" />
@@ -51,15 +89,17 @@ export default function Assets() {
       <ul className="asset-list">
         {data?.items.map((a) => (
           <li key={a.id} className="card">
-            <div className="asset-head">
-              <strong>{a.name}</strong>
-              <span className={`status ${STATUS_CLASS[a.status]}`}>{STATUS_LABEL[a.status]}</span>
-            </div>
-            <p className="mono small">{a.asset_tag}</p>
-            <p className="muted small">
-              {[a.manufacturer, a.model].filter(Boolean).join(" ") || "—"}
-              {a.warranty_until && ` ・ 保証 ${fmtDate(a.warranty_until)}`}
-            </p>
+            <Link to={`/assets/${a.id}`} className="card-link">
+              <div className="asset-head">
+                <strong>{a.name}</strong>
+                <span className={`status ${STATUS_CLASS[a.status]}`}>{STATUS_LABEL[a.status]}</span>
+              </div>
+              <p className="mono small">{a.asset_tag}</p>
+              <p className="muted small">
+                {[a.manufacturer, a.model].filter(Boolean).join(" ") || "—"}
+                {a.warranty_until && ` ・ 保証 ${fmtDate(a.warranty_until)}`}
+              </p>
+            </Link>
           </li>
         ))}
       </ul>

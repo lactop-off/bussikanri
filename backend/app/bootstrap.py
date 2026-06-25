@@ -15,11 +15,14 @@ logger = logging.getLogger("karidasu.bootstrap")
 
 
 def init_db() -> None:
-    """テーブルを作成し、初期データを投入する。
+    """テーブルを用意し、初期データを投入する。
 
-    MVP では create_all を使う。本番の継続運用では Alembic マイグレーションを利用する。
+    SQLite（ローカル/テスト）では create_all で簡便に作成する。
+    PostgreSQL（本番）ではテーブル作成は Alembic マイグレーションに委ね、
+    ここでは初期データ投入のみ行う（api コンテナ起動時に `alembic upgrade head` を実行）。
     """
-    Base.metadata.create_all(bind=engine)
+    if engine.dialect.name == "sqlite":
+        Base.metadata.create_all(bind=engine)
     settings = get_settings()
 
     with SessionLocal() as db:
