@@ -17,7 +17,25 @@ export default function Assets() {
   const [page, setPage] = useState(1);
   const [creating, setCreating] = useState(false);
   const [importMsg, setImportMsg] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   const fileRef = useRef<HTMLInputElement>(null);
+
+  function toggleSelect(id: string, e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  async function bulkLabels() {
+    await downloadFile("/labels", "labels.pdf", {
+      method: "POST",
+      body: { asset_ids: [...selected], layout: "a-one-65" },
+    });
+  }
 
   async function onImport(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -91,7 +109,7 @@ export default function Assets() {
 
       <ul className="asset-list">
         {data?.items.map((a) => (
-          <li key={a.id} className="card">
+          <li key={a.id} className={`card${selected.has(a.id) ? " selected" : ""}`}>
             <Link to={`/assets/${a.id}`} className="card-link">
               <div className="asset-head">
                 <strong>{a.name}</strong>
@@ -103,9 +121,29 @@ export default function Assets() {
                 {a.warranty_until && ` ・ ${fmtDate(a.warranty_until)}`}
               </p>
             </Link>
+            {manager && (
+              <button
+                className={`select-box${selected.has(a.id) ? " on" : ""}`}
+                onClick={(e) => toggleSelect(a.id, e)}
+                aria-label="select"
+              >
+                {selected.has(a.id) ? "✓" : "＋"}
+              </button>
+            )}
           </li>
         ))}
       </ul>
+
+      {selected.size > 0 && (
+        <div className="sel-bar">
+          <button className="ghost small" onClick={() => setSelected(new Set())}>
+            {t("assets.clearSel")}
+          </button>
+          <button className="primary small" onClick={bulkLabels}>
+            🏷 {t("assets.bulkLabel", { n: selected.size })}
+          </button>
+        </div>
+      )}
 
       {pages > 1 && (
         <div className="pager">

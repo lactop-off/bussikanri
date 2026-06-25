@@ -659,6 +659,47 @@ h2 {
   color: inherit;
   display: block;
 }
+.asset-list .card {
+  position: relative;
+}
+.asset-list .card.selected {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 1px var(--teal);
+}
+.select-box {
+  position: absolute;
+  bottom: 0.6rem;
+  right: 0.6rem;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1;
+}
+.select-box.on {
+  background: var(--teal);
+  color: #fff;
+  border-color: var(--teal);
+}
+.sel-bar {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 4.2rem;
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.4rem 0.6rem;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+  z-index: 20;
+}
 .toolbar {
   display: flex;
   gap: 0.5rem;

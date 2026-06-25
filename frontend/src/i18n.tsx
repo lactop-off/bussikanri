@@ -88,6 +88,8 @@ const ja: Dict = {
   "assets.manufacturer": "メーカー",
   "assets.model": "型番",
   "assets.serial": "シリアル番号",
+  "assets.bulkLabel": "ラベル発行 ({n})",
+  "assets.clearSel": "選択解除",
   // asset detail
   "detail.purchaseDate": "取得日",
   "detail.purchasePrice": "取得価格",
@@ -253,6 +255,8 @@ const en: Dict = {
   "assets.manufacturer": "Manufacturer",
   "assets.model": "Model",
   "assets.serial": "Serial no.",
+  "assets.bulkLabel": "Print labels ({n})",
+  "assets.clearSel": "Clear selection",
   "detail.purchaseDate": "Purchased",
   "detail.purchasePrice": "Price",
   "detail.warranty": "Warranty",

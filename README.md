@@ -74,12 +74,25 @@ npm run build
 - スキャン特定（`GET /assets/lookup?tag=`）と貸出/返却（自己・代理、二重貸出の排他制御）
 - 棚卸（連続スキャン・台帳自動照合 発見/欠品/想定外・締め確定）
 - メンテナンス/修理履歴（受付でメンテ中→貸出不可、完了で利用可へ復帰）
-- 返却期限の督促（前日/当日/超過、アプリ内通知。SMTPメールはフック用意）
-- QRラベルPDF発行（市販ラベルシート面付け）・CSVエクスポート/インポート
-- ダッシュボードKPI・監査ログ（追記専用）
+- 返却期限の督促（前日/当日/超過、アプリ内通知 + SMTPメール送信、文面/スケジュール設定可）
+- QRラベルPDF発行（市販ラベルシート面付け、複数選択一括発行）・CSVエクスポート/インポート
+- ダッシュボードKPI・監査ログ（追記専用、CSV出力）
 - PWA：カメラスキャン（@zxing）・オフライン操作キュー・自動同期
 - アプリ内通知ベル（未読バッジ・既読化）・管理画面（マスタ/レポート/ユーザー/設定）
 - i18n（日本語 / English 切替、キー方式）
+- ログイン試行のレート制限
+
+## バックアップ / リストア
+
+PostgreSQL とアップロード画像を取得・復元するスクリプトを同梱（設計書 §12）。
+
+```bash
+scripts/backup.sh                       # backups/ に db ダンプ + media を取得
+# cron 例（日次03:00）:
+# 0 3 * * * /path/to/karidasu/scripts/backup.sh >> /var/log/karidasu-backup.log 2>&1
+
+scripts/restore.sh backups/db-XXXX.dump [backups/media-XXXX.tar.gz]   # 復元
+```
 
 ## CI
 
@@ -90,7 +103,9 @@ npm run build
 ## ドキュメント
 
 - [設計書（要件定義〜詳細設計 / v1.0 MVP）](docs/design.md)
+- [CONTRIBUTING](CONTRIBUTING.md) / [CODE_OF_CONDUCT](CODE_OF_CONDUCT.md)
 
 ## ライセンス
 
-AGPL-3.0 を推奨（設計書 §13）。
+[AGPL-3.0](LICENSE)（設計書 §13）。ネットワーク提供時もソース公開義務があり、
+自己ホストは自由・SaaS無断再販を抑止します。

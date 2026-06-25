@@ -28,6 +28,9 @@ def fresh_db():
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
     init_db()
+    from app.services import ratelimit
+
+    ratelimit.reset()
     yield
     Base.metadata.drop_all(bind=engine)
 

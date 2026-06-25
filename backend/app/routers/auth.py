@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -17,12 +17,20 @@ from ..security import (
     decode_token,
     verify_password,
 )
+from ..services import ratelimit
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post("/login", response_model=TokenPair)
-def login(body: LoginRequest, db: Session = Depends(get_db)) -> TokenPair:
+def login(body: LoginRequest, request: Request, db: Session = Depends(get_db)) -> TokenPair:
+    # ログイン試行のレート制限（設計書 §11）。IP + メールでカウント。
+    client_ip = request.client.host if request.client else "unknown"
+    if not ratelimit.check(f"login:{client_ip}:{body.email.lower()}"):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail={"code": "TOO_MANY_ATTEMPTS", "message": "ログイン試行が多すぎます。しばらくしてからお試しください"},
+        )
     user = db.scalar(select(User).where(User.email == body.email))
     if not user or not verify_password(body.password, user.password_hash):
         raise HTTPException(
