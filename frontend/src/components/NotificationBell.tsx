@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { api } from "../api";
+import { useT } from "../i18n";
 import type { Notification } from "../types";
 import { fmtDate } from "../statusLabels";
 
 // アプリ内通知ベル（設計書 FR-6 / §10）。定期的に未読を取得して表示する。
 export default function NotificationBell() {
+  const { t } = useT();
   const [items, setItems] = useState<Notification[]>([]);
   const [open, setOpen] = useState(false);
 
@@ -36,7 +38,7 @@ export default function NotificationBell() {
 
   return (
     <div className="bell">
-      <button className="bell-btn" onClick={() => setOpen((o) => !o)} aria-label="通知">
+      <button className="bell-btn" onClick={() => setOpen((o) => !o)} aria-label={t("top.notifications")}>
         🔔{unread > 0 && <span className="bell-badge">{unread}</span>}
       </button>
       {open && (
@@ -44,14 +46,14 @@ export default function NotificationBell() {
           <div className="bell-overlay" onClick={() => setOpen(false)} />
           <div className="bell-panel">
             <div className="bell-head">
-              <strong>通知</strong>
+              <strong>{t("top.notifications")}</strong>
               {unread > 0 && (
                 <button className="link-btn dark" onClick={markAll}>
-                  すべて既読
+                  {t("top.markAllRead")}
                 </button>
               )}
             </div>
-            {items.length === 0 && <p className="muted small bell-empty">通知はありません</p>}
+            {items.length === 0 && <p className="muted small bell-empty">{t("top.noNotifications")}</p>}
             <ul>
               {items.map((n) => (
                 <li

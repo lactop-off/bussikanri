@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth";
+import { useT } from "../i18n";
 import { ApiError } from "../api";
 
 export default function Login() {
   const { login } = useAuth();
+  const { t, locale, setLocale } = useT();
   const nav = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -19,7 +21,7 @@ export default function Login() {
       await login(email, password);
       nav("/");
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "ログインに失敗しました");
+      setError(err instanceof ApiError ? err.message : t("login.failed"));
     } finally {
       setBusy(false);
     }
@@ -29,10 +31,10 @@ export default function Login() {
     <div className="login">
       <div className="login-card">
         <h1 className="login-brand">Karidasu</h1>
-        <p className="login-sub">備品・資産 貸出/管理</p>
+        <p className="login-sub">{t("login.subtitle")}</p>
         <form onSubmit={submit}>
           <label>
-            メールアドレス
+            {t("login.email")}
             <input
               type="email"
               value={email}
@@ -42,7 +44,7 @@ export default function Login() {
             />
           </label>
           <label>
-            パスワード
+            {t("login.password")}
             <input
               type="password"
               value={password}
@@ -53,9 +55,12 @@ export default function Login() {
           </label>
           {error && <p className="error">{error}</p>}
           <button type="submit" disabled={busy}>
-            {busy ? "ログイン中…" : "ログイン"}
+            {busy ? t("login.loggingIn") : t("login.login")}
           </button>
         </form>
+        <button className="lang-toggle" onClick={() => setLocale(locale === "ja" ? "en" : "ja")}>
+          {locale === "ja" ? "English" : "日本語"}
+        </button>
       </div>
     </div>
   );

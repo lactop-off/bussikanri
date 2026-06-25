@@ -3,12 +3,13 @@ import Scanner from "../components/Scanner";
 import { api } from "../api";
 import { downloadFile } from "../download";
 import { offlineQueue } from "../offline";
+import { useT } from "../i18n";
 import { useMasters } from "../useMasters";
 import type { AuditReport } from "../types";
-import { STATUS_LABEL } from "../statusLabels";
 
 // 棚卸モード（設計書 FR-5 / §10.3）。連続スキャンで台帳照合、オフライン退避対応。
 export default function Audit() {
+  const { t } = useT();
   const { categories, locations } = useMasters();
   const [audits, setAudits] = useState<{ id: string; name: string; status: string }[]>([]);
   const [report, setReport] = useState<AuditReport | null>(null);
@@ -52,7 +53,7 @@ export default function Audit() {
         kind: "audit_scan",
         path: `/audits/${report.audit.id}/scan`,
         body: { tags: [tag] },
-        label: `棚卸スキャン: ${tag}`,
+        label: `audit scan: ${tag}`,
       });
       return;
     }
@@ -65,7 +66,7 @@ export default function Audit() {
 
   async function close() {
     if (!report) return;
-    if (!confirm("棚卸を締めます。未スキャンの資産は欠品として確定されます。よろしいですか？")) return;
+    if (!confirm(t("audit.closeConfirm"))) return;
     const final = await api<AuditReport>(`/audits/${report.audit.id}/close`, { method: "POST", body: {} });
     setReport(final);
     await loadList();
@@ -74,15 +75,15 @@ export default function Audit() {
   if (!report) {
     return (
       <div className="audit">
-        <h2>棚卸</h2>
+        <h2>{t("audit.title")}</h2>
         <div className="card">
-          <h3>新規棚卸</h3>
+          <h3>{t("audit.new")}</h3>
           <label>
-            棚卸名
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="例: 2026年6月 会議室A" />
+            {t("audit.name")}
+            <input value={name} onChange={(e) => setName(e.target.value)} />
           </label>
           <label>
-            対象範囲
+            {t("audit.scope")}
             <select
               value={scope}
               onChange={(e) => {
@@ -90,16 +91,16 @@ export default function Audit() {
                 setScopeRef("");
               }}
             >
-              <option value="all">全体</option>
-              <option value="category">カテゴリ</option>
-              <option value="location">保管場所</option>
+              <option value="all">{t("audit.scopeAll")}</option>
+              <option value="category">{t("audit.scopeCategory")}</option>
+              <option value="location">{t("audit.scopeLocation")}</option>
             </select>
           </label>
           {scope !== "all" && (
             <label>
-              {scope === "category" ? "カテゴリ" : "保管場所"}を選択
+              {scope === "category" ? t("audit.scopeCategory") : t("audit.scopeLocation")}
               <select value={scopeRef} onChange={(e) => setScopeRef(e.target.value)}>
-                <option value="">（選択してください）</option>
+                <option value="">{t("audit.selectScope")}</option>
                 {(scope === "category" ? categories : locations).map((m) => (
                   <option key={m.id} value={m.id}>
                     {m.name}
@@ -109,20 +110,20 @@ export default function Audit() {
             </label>
           )}
           <button className="primary block" onClick={create} disabled={!name.trim() || (scope !== "all" && !scopeRef)}>
-            開始
+            {t("audit.start")}
           </button>
         </div>
-        <h3>過去の棚卸</h3>
+        <h3>{t("audit.past")}</h3>
         <ul className="audit-list">
           {audits.map((a) => (
             <li key={a.id} className="card row" onClick={() => open(a.id)}>
               <strong>{a.name}</strong>
               <span className={a.status === "closed" ? "muted" : "status busy"}>
-                {a.status === "closed" ? "締済" : "実施中"}
+                {a.status === "closed" ? t("audit.closed") : t("audit.running")}
               </span>
             </li>
           ))}
-          {audits.length === 0 && <p className="muted">棚卸はまだありません。</p>}
+          {audits.length === 0 && <p className="muted">{t("audit.none")}</p>}
         </ul>
       </div>
     );
@@ -143,15 +144,15 @@ export default function Audit() {
             ⬇ CSV
           </button>
           <button className="ghost small" onClick={() => setReport(null)}>
-            ← 一覧
+            ← {t("common.toList")}
           </button>
         </div>
       </div>
 
       <div className="audit-stats">
-        <span className="stat ok">発見 {report.found}</span>
-        <span className="stat danger">欠品 {report.missing}</span>
-        <span className="stat warn">想定外 {report.unexpected}</span>
+        <span className="stat ok">{t("audit.found")} {report.found}</span>
+        <span className="stat danger">{t("audit.missing")} {report.missing}</span>
+        <span className="stat warn">{t("audit.unexpected")} {report.unexpected}</span>
       </div>
 
       {open_ ? (
@@ -159,31 +160,31 @@ export default function Audit() {
           <Scanner onScan={onScan} continuous cooldownMs={1200} />
           {recent.length > 0 && (
             <div className="recent">
-              <p className="muted small">直近スキャン</p>
+              <p className="muted small">{t("audit.recent")}</p>
               <ul>
-                {recent.map((t, i) => (
+                {recent.map((tag, i) => (
                   <li key={i} className="mono small">
-                    {t}
+                    {tag}
                   </li>
                 ))}
               </ul>
             </div>
           )}
           <button className="primary block" onClick={close}>
-            棚卸を締める
+            {t("audit.close")}
           </button>
         </>
       ) : (
         <div className="card">
-          <p className="muted">この棚卸は締め済みです。結果:</p>
+          <p className="muted">{t("audit.closedNote")}</p>
           <ul className="result-list">
             {report.items.map((it) => (
               <li key={it.id}>
                 <span className="mono small">{it.asset.asset_tag}</span> {it.asset.name}{" "}
                 <span className={`result ${it.result}`}>
-                  {it.result === "found" ? "発見" : it.result === "missing" ? "欠品" : "想定外"}
+                  {it.result === "found" ? t("audit.found") : it.result === "missing" ? t("audit.missing") : t("audit.unexpected")}
                 </span>
-                <span className="muted small"> ({STATUS_LABEL[it.asset.status]})</span>
+                <span className="muted small"> ({t(`status.${it.asset.status}`)})</span>
               </li>
             ))}
           </ul>

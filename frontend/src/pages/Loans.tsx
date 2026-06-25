@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { api } from "../api";
 import { canManage, useAuth } from "../auth";
+import { useT } from "../i18n";
 import type { Loan, Page } from "../types";
 import { fmtDate } from "../statusLabels";
 
 export default function Loans() {
   const { user } = useAuth();
+  const { t } = useT();
   const manager = canManage(user);
   const [scope, setScope] = useState<"self" | "all">("self");
   const [overdueOnly, setOverdueOnly] = useState(false);
@@ -20,25 +22,25 @@ export default function Loans() {
 
   return (
     <div className="loans">
-      <h2>貸出状況</h2>
+      <h2>{t("loans.title")}</h2>
       <div className="filters">
         {manager && (
           <div className="seg">
             <button className={scope === "self" ? "active" : ""} onClick={() => setScope("self")}>
-              自分
+              {t("loans.self")}
             </button>
             <button className={scope === "all" ? "active" : ""} onClick={() => setScope("all")}>
-              全体
+              {t("loans.all")}
             </button>
           </div>
         )}
         <label className="check">
           <input type="checkbox" checked={overdueOnly} onChange={(e) => setOverdueOnly(e.target.checked)} />
-          期限超過のみ
+          {t("loans.overdueOnly")}
         </label>
       </div>
 
-      {data && <p className="muted small">{data.total} 件</p>}
+      {data && <p className="muted small">{t("common.count", { n: data.total })}</p>}
       <ul className="loan-list">
         {data?.items.map((ln) => {
           const overdue = new Date(ln.due_at) < new Date();
@@ -47,17 +49,17 @@ export default function Loans() {
               <div className="asset-head">
                 <strong>{ln.asset.name}</strong>
                 <span className={overdue ? "status danger" : "status busy"}>
-                  {overdue ? "超過" : "貸出中"}
+                  {overdue ? t("loans.overdue") : t("loans.checkedOut")}
                 </span>
               </div>
               <p className="mono small">{ln.asset.asset_tag}</p>
               <p className="muted small">
-                借用: {ln.borrower.name} ・ 期限 {fmtDate(ln.due_at)}
+                {t("loans.borrowerDue", { name: ln.borrower.name, due: fmtDate(ln.due_at) })}
               </p>
             </li>
           );
         })}
-        {data?.items.length === 0 && <p className="muted">該当する貸出はありません。</p>}
+        {data?.items.length === 0 && <p className="muted">{t("loans.none")}</p>}
       </ul>
     </div>
   );

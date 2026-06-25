@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api } from "../api";
 import { downloadFile } from "../download";
 import { useAuth } from "../auth";
+import { useT } from "../i18n";
 import { useMasters } from "../useMasters";
 import type { AppSettings, Master, Page, Role, User } from "../types";
 
@@ -9,19 +10,20 @@ type Tab = "masters" | "reports" | "users" | "settings";
 
 export default function Manage() {
   const { user } = useAuth();
+  const { t } = useT();
   const isAdmin = user?.role === "admin";
   const [tab, setTab] = useState<Tab>("masters");
 
   const tabs: { key: Tab; label: string; show: boolean }[] = [
-    { key: "masters", label: "マスタ", show: true },
-    { key: "reports", label: "レポート", show: true },
-    { key: "users", label: "ユーザー", show: isAdmin },
-    { key: "settings", label: "設定", show: isAdmin },
+    { key: "masters", label: t("manage.tabMasters"), show: true },
+    { key: "reports", label: t("manage.tabReports"), show: true },
+    { key: "users", label: t("manage.tabUsers"), show: isAdmin },
+    { key: "settings", label: t("manage.tabSettings"), show: isAdmin },
   ];
 
   return (
     <div className="manage">
-      <h2>管理</h2>
+      <h2>{t("manage.title")}</h2>
       <div className="tabs">
         {tabs
           .filter((t) => t.show)
@@ -42,11 +44,12 @@ export default function Manage() {
 
 // ---- マスタ管理（カテゴリ / 保管場所、階層対応）----
 function MastersPanel() {
+  const { t } = useT();
   const { categories, locations, reload } = useMasters();
   return (
     <div className="panel">
-      <MasterList title="カテゴリ" path="/categories" items={categories} onChange={reload} />
-      <MasterList title="保管場所" path="/locations" items={locations} onChange={reload} />
+      <MasterList title={t("manage.categories")} path="/categories" items={categories} onChange={reload} />
+      <MasterList title={t("manage.locations")} path="/locations" items={locations} onChange={reload} />
     </div>
   );
 }
@@ -62,6 +65,7 @@ function MasterList({
   items: Master[];
   onChange: () => void;
 }) {
+  const { t } = useT();
   const [name, setName] = useState("");
   const [parentId, setParentId] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -83,7 +87,7 @@ function MasterList({
 
   return (
     <div className="card">
-      <h3>{title}（{items.length}）</h3>
+      <h3>{title} ({items.length})</h3>
       <ul className="master-items">
         {items.map((i) => (
           <li key={i.id}>
@@ -93,16 +97,16 @@ function MasterList({
         ))}
       </ul>
       <form className="master-add" onSubmit={add}>
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder={`${title}名`} required />
+        <input value={name} onChange={(e) => setName(e.target.value)} placeholder={title} required />
         <select value={parentId} onChange={(e) => setParentId(e.target.value)}>
-          <option value="">（親なし）</option>
+          <option value="">{t("manage.noParent")}</option>
           {items.map((i) => (
             <option key={i.id} value={i.id}>
               {i.name}
             </option>
           ))}
         </select>
-        <button type="submit">追加</button>
+        <button type="submit">{t("common.add")}</button>
       </form>
       {error && <p className="error">{error}</p>}
     </div>
@@ -111,32 +115,37 @@ function MasterList({
 
 // ---- レポート（CSV出力）----
 function ReportsPanel() {
+  const { t } = useT();
   return (
     <div className="panel">
       <div className="card">
-        <h3>CSVエクスポート</h3>
-        <p className="muted small">UTF-8 BOM 付き（Excel互換）で出力します。</p>
+        <h3>{t("manage.csvTitle")}</h3>
+        <p className="muted small">{t("manage.csvNote")}</p>
         <div className="report-buttons">
           <button className="ghost" onClick={() => downloadFile("/reports/assets.csv", "assets.csv")}>
-            ⬇ 在庫一覧
+            ⬇ {t("manage.repAssets")}
           </button>
           <button className="ghost" onClick={() => downloadFile("/reports/loans.csv", "loans.csv")}>
-            ⬇ 貸出状況
+            ⬇ {t("manage.repLoans")}
           </button>
           <button className="ghost" onClick={() => downloadFile("/reports/activity.csv", "activity.csv")}>
-            ⬇ 操作履歴
+            ⬇ {t("manage.repActivity")}
           </button>
         </div>
-        <p className="muted small">※ 棚卸結果のCSVは「棚卸」画面の各セッションから出力できます。</p>
+        <p className="muted small">{t("manage.auditCsvNote")}</p>
       </div>
     </div>
   );
 }
 
 // ---- ユーザー管理（admin）----
-const ROLE_LABEL: Record<Role, string> = { admin: "管理者", manager: "資産管理", member: "一般" };
-
 function UsersPanel() {
+  const { t } = useT();
+  const ROLE_LABEL: Record<Role, string> = {
+    admin: t("role.admin"),
+    manager: t("role.manager"),
+    member: t("role.member"),
+  };
   const [data, setData] = useState<Page<User> | null>(null);
   const [creating, setCreating] = useState(false);
 
@@ -155,9 +164,9 @@ function UsersPanel() {
   return (
     <div className="panel">
       <div className="page-head">
-        <h3>ユーザー（{data?.total ?? 0}）</h3>
+        <h3>{t("manage.users", { n: data?.total ?? 0 })}</h3>
         <button className="primary small" onClick={() => setCreating(true)}>
-          ＋ 追加
+          ＋ {t("common.add")}
         </button>
       </div>
       <ul className="asset-list">
@@ -166,7 +175,7 @@ function UsersPanel() {
             <div className="asset-head">
               <strong>
                 {u.name}
-                {!u.is_active && <span className="muted small">（無効）</span>}
+                {!u.is_active && <span className="muted small">{t("manage.disabled")}</span>}
               </strong>
               <span className="muted small">{u.department || ""}</span>
             </div>
@@ -180,7 +189,7 @@ function UsersPanel() {
                 ))}
               </select>
               <button className="ghost small" onClick={() => patch(u, { is_active: !u.is_active })}>
-                {u.is_active ? "無効化" : "有効化"}
+                {u.is_active ? t("manage.disable") : t("manage.enable")}
               </button>
             </div>
           </li>
@@ -200,6 +209,7 @@ function UsersPanel() {
 }
 
 function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+  const { t } = useT();
   const [f, setF] = useState({ name: "", email: "", password: "", role: "member" as Role, department: "" });
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -224,17 +234,17 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <h3>ユーザーを追加</h3>
+        <h3>{t("manage.addUser")}</h3>
         <form onSubmit={submit}>
           <label>
-            氏名 *<input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} required />
+            {t("manage.userName")} *<input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} required />
           </label>
           <label>
-            メール *
+            {t("login.email")} *
             <input type="email" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} required />
           </label>
           <label>
-            初期パスワード *（8文字以上）
+            {t("manage.initialPassword")} *
             <input
               type="password"
               value={f.password}
@@ -244,24 +254,24 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
             />
           </label>
           <label>
-            ロール
+            {t("manage.role")}
             <select value={f.role} onChange={(e) => setF({ ...f, role: e.target.value as Role })}>
-              <option value="member">一般</option>
-              <option value="manager">資産管理</option>
-              <option value="admin">管理者</option>
+              <option value="member">{t("role.member")}</option>
+              <option value="manager">{t("role.manager")}</option>
+              <option value="admin">{t("role.admin")}</option>
             </select>
           </label>
           <label>
-            部署
+            {t("manage.department")}
             <input value={f.department} onChange={(e) => setF({ ...f, department: e.target.value })} />
           </label>
           {error && <p className="error">{error}</p>}
           <div className="actions">
             <button type="submit" className="primary" disabled={busy}>
-              追加
+              {t("common.add")}
             </button>
             <button type="button" className="ghost" onClick={onClose}>
-              キャンセル
+              {t("common.cancel")}
             </button>
           </div>
         </form>
@@ -272,6 +282,7 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
 
 // ---- アプリ設定（admin）----
 function SettingsPanel() {
+  const { t } = useT();
   const [s, setS] = useState<AppSettings | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -288,7 +299,7 @@ function SettingsPanel() {
     try {
       const saved = await api<AppSettings>("/settings", { method: "PATCH", body: s });
       setS(saved);
-      setToast("保存しました（督促スケジュール変更はworker再起動で反映）");
+      setToast(t("manage.saved"));
     } catch (err) {
       setToast((err as Error).message);
     } finally {
@@ -296,18 +307,18 @@ function SettingsPanel() {
     }
   }
 
-  if (!s) return <p className="muted">読み込み中…</p>;
+  if (!s) return <p className="muted">{t("common.loading")}</p>;
 
   return (
     <div className="panel">
       <form className="card settings-form" onSubmit={save}>
         {toast && <div className="toast ok">{toast}</div>}
         <label>
-          組織名
+          {t("manage.orgName")}
           <input value={s.org_name} onChange={(e) => setS({ ...s, org_name: e.target.value })} />
         </label>
         <label>
-          既定貸出日数
+          {t("manage.loanDays")}
           <input
             type="number"
             min={1}
@@ -316,29 +327,29 @@ function SettingsPanel() {
           />
         </label>
         <label>
-          管理番号プレフィックス
+          {t("manage.prefix")}
           <input value={s.asset_tag_prefix} onChange={(e) => setS({ ...s, asset_tag_prefix: e.target.value })} />
         </label>
         <label>
-          督促スケジュール (cron: 分 時 日 月 曜)
+          {t("manage.cron")}
           <input value={s.reminder_cron} onChange={(e) => setS({ ...s, reminder_cron: e.target.value })} />
         </label>
         <label>
-          督促文面（期限間近） — {"{asset}"} {"{due}"} が使えます
+          {t("manage.tmplDue")}
           <input
             value={s.reminder_due_template}
             onChange={(e) => setS({ ...s, reminder_due_template: e.target.value })}
           />
         </label>
         <label>
-          督促文面（超過）
+          {t("manage.tmplOverdue")}
           <input
             value={s.reminder_overdue_template}
             onChange={(e) => setS({ ...s, reminder_overdue_template: e.target.value })}
           />
         </label>
         <button type="submit" className="primary" disabled={busy}>
-          保存
+          {t("common.save")}
         </button>
       </form>
     </div>

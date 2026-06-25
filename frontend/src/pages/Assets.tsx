@@ -3,12 +3,14 @@ import { Link } from "react-router-dom";
 import { api } from "../api";
 import { downloadFile } from "../download";
 import { canManage, useAuth } from "../auth";
+import { useT } from "../i18n";
 import { useMasters } from "../useMasters";
 import type { Asset, Page } from "../types";
-import { STATUS_LABEL, STATUS_CLASS, fmtDate } from "../statusLabels";
+import { STATUS_CLASS, fmtDate } from "../statusLabels";
 
 export default function Assets() {
   const { user } = useAuth();
+  const { t } = useT();
   const manager = canManage(user);
   const [q, setQ] = useState("");
   const [data, setData] = useState<Page<Asset> | null>(null);
@@ -27,7 +29,7 @@ export default function Assets() {
         method: "POST",
         body: fd,
       });
-      setImportMsg(`登録 ${r.created} 件 / スキップ ${r.skipped} 件${r.errors.length ? ` / エラー ${r.errors.length}` : ""}`);
+      setImportMsg(t("assets.importResult", { created: r.created, skipped: r.skipped }));
       setPage(1);
       load();
     } catch (err) {
@@ -59,10 +61,10 @@ export default function Assets() {
   return (
     <div className="assets">
       <div className="page-head">
-        <h2>資産一覧</h2>
+        <h2>{t("assets.title")}</h2>
         {manager && (
           <button className="primary small" onClick={() => setCreating(true)}>
-            ＋ 登録
+            ＋ {t("common.register")}
           </button>
         )}
       </div>
@@ -70,10 +72,10 @@ export default function Assets() {
       {manager && (
         <div className="toolbar">
           <button className="ghost small" onClick={() => downloadFile("/reports/assets.csv", "assets.csv")}>
-            ⬇ CSV出力
+            ⬇ {t("assets.csvExport")}
           </button>
           <button className="ghost small" onClick={() => fileRef.current?.click()}>
-            ⬆ CSV取込
+            ⬆ {t("assets.csvImport")}
           </button>
           <input ref={fileRef} type="file" accept=".csv" hidden onChange={onImport} />
         </div>
@@ -81,11 +83,11 @@ export default function Assets() {
       {importMsg && <div className="toast ok">{importMsg}</div>}
 
       <form className="manual" onSubmit={search}>
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="名称 / 管理番号 / 型番で検索" />
-        <button type="submit">検索</button>
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("assets.searchPlaceholder")} />
+        <button type="submit">{t("common.search")}</button>
       </form>
 
-      {data && <p className="muted small">{data.total} 件</p>}
+      {data && <p className="muted small">{t("common.count", { n: data.total })}</p>}
 
       <ul className="asset-list">
         {data?.items.map((a) => (
@@ -93,12 +95,12 @@ export default function Assets() {
             <Link to={`/assets/${a.id}`} className="card-link">
               <div className="asset-head">
                 <strong>{a.name}</strong>
-                <span className={`status ${STATUS_CLASS[a.status]}`}>{STATUS_LABEL[a.status]}</span>
+                <span className={`status ${STATUS_CLASS[a.status]}`}>{t(`status.${a.status}`)}</span>
               </div>
               <p className="mono small">{a.asset_tag}</p>
               <p className="muted small">
                 {[a.manufacturer, a.model].filter(Boolean).join(" ") || "—"}
-                {a.warranty_until && ` ・ 保証 ${fmtDate(a.warranty_until)}`}
+                {a.warranty_until && ` ・ ${fmtDate(a.warranty_until)}`}
               </p>
             </Link>
           </li>
@@ -108,13 +110,13 @@ export default function Assets() {
       {pages > 1 && (
         <div className="pager">
           <button disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-            前へ
+            {t("common.prev")}
           </button>
           <span>
             {page} / {pages}
           </span>
           <button disabled={page >= pages} onClick={() => setPage((p) => p + 1)}>
-            次へ
+            {t("common.next")}
           </button>
         </div>
       )}
@@ -125,6 +127,7 @@ export default function Assets() {
 }
 
 function CreateAssetModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+  const { t } = useT();
   const { categories, locations } = useMasters();
   const [form, setForm] = useState({
     name: "",
@@ -161,32 +164,32 @@ function CreateAssetModal({ onClose, onCreated }: { onClose: () => void; onCreat
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <h3>資産を登録</h3>
+        <h3>{t("assets.register")}</h3>
         <form onSubmit={submit}>
           <label>
-            名称 *
+            {t("assets.name")} *
             <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
           </label>
           <label>
-            管理番号（空欄で自動採番）
+            {t("assets.tag")}
             <input
               value={form.asset_tag}
               onChange={(e) => setForm({ ...form, asset_tag: e.target.value })}
-              placeholder="KRD-000123 / 既存バーコード可"
+              placeholder="KRD-000123"
             />
           </label>
           <label>
-            コード種別
+            {t("assets.tagType")}
             <select value={form.tag_type} onChange={(e) => setForm({ ...form, tag_type: e.target.value })}>
               <option value="qr">QR</option>
-              <option value="code128">CODE128（バーコード）</option>
-              <option value="ean">EAN（製品バーコード）</option>
+              <option value="code128">CODE128</option>
+              <option value="ean">EAN</option>
             </select>
           </label>
           <label>
-            カテゴリ
+            {t("assets.category")}
             <select value={form.category_id} onChange={(e) => setForm({ ...form, category_id: e.target.value })}>
-              <option value="">（未設定）</option>
+              <option value="">{t("common.none")}</option>
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
@@ -195,12 +198,12 @@ function CreateAssetModal({ onClose, onCreated }: { onClose: () => void; onCreat
             </select>
           </label>
           <label>
-            保管場所（ホーム）
+            {t("assets.location")}
             <select
               value={form.home_location_id}
               onChange={(e) => setForm({ ...form, home_location_id: e.target.value })}
             >
-              <option value="">（未設定）</option>
+              <option value="">{t("common.none")}</option>
               {locations.map((l) => (
                 <option key={l.id} value={l.id}>
                   {l.name}
@@ -209,24 +212,24 @@ function CreateAssetModal({ onClose, onCreated }: { onClose: () => void; onCreat
             </select>
           </label>
           <label>
-            メーカー
+            {t("assets.manufacturer")}
             <input value={form.manufacturer} onChange={(e) => setForm({ ...form, manufacturer: e.target.value })} />
           </label>
           <label>
-            型番
+            {t("assets.model")}
             <input value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} />
           </label>
           <label>
-            シリアル番号
+            {t("assets.serial")}
             <input value={form.serial_no} onChange={(e) => setForm({ ...form, serial_no: e.target.value })} />
           </label>
           {error && <p className="error">{error}</p>}
           <div className="actions">
             <button type="submit" className="primary" disabled={busy}>
-              登録
+              {t("common.register")}
             </button>
             <button type="button" className="ghost" onClick={onClose}>
-              キャンセル
+              {t("common.cancel")}
             </button>
           </div>
         </form>

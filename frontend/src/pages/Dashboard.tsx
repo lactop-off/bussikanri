@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { api } from "../api";
 import { useAuth } from "../auth";
+import { useT } from "../i18n";
 import type { Dashboard as Dash, Loan, Page } from "../types";
 import { fmtDate } from "../statusLabels";
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const { t } = useT();
   const [dash, setDash] = useState<Dash | null>(null);
   const [myLoans, setMyLoans] = useState<Loan[]>([]);
 
@@ -15,15 +17,15 @@ export default function Dashboard() {
   }, []);
 
   const cards: { label: string; value: number | undefined; cls: string }[] = [
-    { label: "総資産数", value: dash?.total_assets, cls: "" },
-    { label: "貸出中", value: dash?.checked_out, cls: "busy" },
-    { label: "期限超過", value: dash?.overdue, cls: "danger" },
-    { label: "メンテ中", value: dash?.under_maintenance, cls: "warn" },
+    { label: t("dash.totalAssets"), value: dash?.total_assets, cls: "" },
+    { label: t("dash.checkedOut"), value: dash?.checked_out, cls: "busy" },
+    { label: t("dash.overdue"), value: dash?.overdue, cls: "danger" },
+    { label: t("dash.underMaintenance"), value: dash?.under_maintenance, cls: "warn" },
   ];
 
   return (
     <div className="dashboard">
-      <h2>こんにちは、{user?.name} さん</h2>
+      <h2>{t("dash.greeting", { name: user?.name ?? "" })}</h2>
       <div className="kpi-grid">
         {cards.map((c) => (
           <div key={c.label} className={`kpi ${c.cls}`}>
@@ -33,8 +35,8 @@ export default function Dashboard() {
         ))}
       </div>
 
-      <h3>あなたの借用中の資産（{myLoans.length}）</h3>
-      {myLoans.length === 0 && <p className="muted">借用中の資産はありません。</p>}
+      <h3>{t("dash.yourLoans", { n: myLoans.length })}</h3>
+      {myLoans.length === 0 && <p className="muted">{t("dash.noLoans")}</p>}
       <ul className="loan-list">
         {myLoans.map((ln) => {
           const overdue = new Date(ln.due_at) < new Date();
@@ -45,8 +47,8 @@ export default function Dashboard() {
                 <span className="mono small"> {ln.asset.asset_tag}</span>
               </div>
               <span className={overdue ? "status danger" : "muted"}>
-                返却期限 {fmtDate(ln.due_at)}
-                {overdue && "（超過）"}
+                {t("dash.due", { due: fmtDate(ln.due_at) })}
+                {overdue && t("dash.overdueMark")}
               </span>
             </li>
           );

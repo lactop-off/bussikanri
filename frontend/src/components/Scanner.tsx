@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { BrowserMultiFormatReader } from "@zxing/browser";
+import { useT } from "../i18n";
 
 // カメラで QR/CODE128/EAN を読み取る（設計書 §8.1 @zxing/browser, FR-4.4）。
 // 手入力フォールバックも提供（リスク表 §15: カメラ精度・端末差）。
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export default function Scanner({ onScan, continuous = false, cooldownMs = 1500 }: Props) {
+  const { t } = useT();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [manual, setManual] = useState("");
@@ -37,9 +39,7 @@ export default function Scanner({ onScan, continuous = false, cooldownMs = 1500 
         if (cancelled) controls.stop();
         else controlsRef.current = controls;
       } catch (e) {
-        setError(
-          "カメラを起動できませんでした。権限を確認するか、下の手入力をご利用ください。"
-        );
+        setError(t("scan.cameraError"));
         console.error(e);
       }
     })();
@@ -73,10 +73,10 @@ export default function Scanner({ onScan, continuous = false, cooldownMs = 1500 
         <input
           value={manual}
           onChange={(e) => setManual(e.target.value)}
-          placeholder="管理番号を手入力 (例: KRD-000123)"
-          aria-label="管理番号を手入力"
+          placeholder={t("scan.manualPlaceholder")}
+          aria-label={t("scan.manualPlaceholder")}
         />
-        <button type="submit">検索</button>
+        <button type="submit">{t("common.search")}</button>
       </form>
     </div>
   );

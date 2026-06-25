@@ -1,14 +1,16 @@
 import { useState } from "react";
 import Scanner from "../components/Scanner";
 import { api, ApiError } from "../api";
+import { useT } from "../i18n";
 import { offlineQueue } from "../offline";
 import type { AssetLookup } from "../types";
-import { STATUS_LABEL, STATUS_CLASS, fmtDate } from "../statusLabels";
+import { STATUS_CLASS, fmtDate } from "../statusLabels";
 
 type Toast = { kind: "ok" | "err"; msg: string } | null;
 
 // スキャン(ホーム)。資産を特定し、状態に応じて貸出/返却を1タップで提示（設計書 §10.2 / UC-1）。
 export default function Scan() {
+  const { t } = useT();
   const [asset, setAsset] = useState<AssetLookup | null>(null);
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState<Toast>(null);
@@ -22,7 +24,7 @@ export default function Scan() {
       const found = await api<AssetLookup>(`/assets/lookup?tag=${encodeURIComponent(tag)}`);
       setAsset(found);
     } catch (e) {
-      setToast({ kind: "err", msg: e instanceof ApiError ? e.message : "資産が見つかりません" });
+      setToast({ kind: "err", msg: e instanceof ApiError ? e.message : t("scan.notFound") });
       setScanning(true);
     } finally {
       setBusy(false);
@@ -38,16 +40,16 @@ export default function Scan() {
           kind: "checkout",
           path: `/assets/${asset.id}/checkout`,
           body: { borrower_id: "self" },
-          label: `貸出: ${asset.name}`,
+          label: `checkout: ${asset.name}`,
         });
-        setToast({ kind: "ok", msg: "オフラインのため保留しました（復帰時に同期）" });
+        setToast({ kind: "ok", msg: t("scan.queued") });
       } else {
         await api(`/assets/${asset.id}/checkout`, { method: "POST", body: { borrower_id: "self" } });
-        setToast({ kind: "ok", msg: `「${asset.name}」を貸出しました` });
+        setToast({ kind: "ok", msg: t("scan.checkedOut", { name: asset.name }) });
       }
       reset();
     } catch (e) {
-      setToast({ kind: "err", msg: e instanceof ApiError ? e.message : "貸出に失敗しました" });
+      setToast({ kind: "err", msg: e instanceof ApiError ? e.message : t("scan.checkoutFailed") });
     } finally {
       setBusy(false);
     }
@@ -62,16 +64,16 @@ export default function Scan() {
           kind: "checkin",
           path: `/assets/${asset.id}/checkin`,
           body: {},
-          label: `返却: ${asset.name}`,
+          label: `checkin: ${asset.name}`,
         });
-        setToast({ kind: "ok", msg: "オフラインのため保留しました（復帰時に同期）" });
+        setToast({ kind: "ok", msg: t("scan.queued") });
       } else {
         await api(`/assets/${asset.id}/checkin`, { method: "POST", body: {} });
-        setToast({ kind: "ok", msg: `「${asset.name}」を返却しました` });
+        setToast({ kind: "ok", msg: t("scan.returned", { name: asset.name }) });
       }
       reset();
     } catch (e) {
-      setToast({ kind: "err", msg: e instanceof ApiError ? e.message : "返却に失敗しました" });
+      setToast({ kind: "err", msg: e instanceof ApiError ? e.message : t("scan.checkinFailed") });
     } finally {
       setBusy(false);
     }
@@ -84,43 +86,46 @@ export default function Scan() {
 
   return (
     <div className="scan-page">
-      <h2>スキャン</h2>
+      <h2>{t("scan.title")}</h2>
       {toast && <div className={`toast ${toast.kind}`}>{toast.msg}</div>}
 
       {scanning && !asset && <Scanner onScan={handleScan} />}
 
-      {busy && !asset && <p className="muted">読み取り中…</p>}
+      {busy && !asset && <p className="muted">{t("scan.reading")}</p>}
 
       {asset && (
         <div className="asset-action card">
           <div className="asset-head">
             <h3>{asset.name}</h3>
-            <span className={`status ${STATUS_CLASS[asset.status]}`}>{STATUS_LABEL[asset.status]}</span>
+            <span className={`status ${STATUS_CLASS[asset.status]}`}>{t(`status.${asset.status}`)}</span>
           </div>
           <p className="mono">{asset.asset_tag}</p>
 
           {asset.current_loan && (
             <p className="muted">
-              借用者: {asset.current_loan.borrower.name} / 返却期限 {fmtDate(asset.current_loan.due_at)}
+              {t("scan.borrowerDue", {
+                name: asset.current_loan.borrower.name,
+                due: fmtDate(asset.current_loan.due_at),
+              })}
             </p>
           )}
 
           <div className="actions">
             {asset.status === "available" && (
               <button className="primary" onClick={checkout} disabled={busy}>
-                借りる（貸出）
+                {t("scan.checkout")}
               </button>
             )}
             {asset.status === "checked_out" && (
               <button className="primary" onClick={checkin} disabled={busy}>
-                返す（返却）
+                {t("scan.checkin")}
               </button>
             )}
             {asset.status !== "available" && asset.status !== "checked_out" && (
-              <p className="error">この資産は現在貸出できません（{STATUS_LABEL[asset.status]}）</p>
+              <p className="error">{t("scan.cannotLend", { status: t(`status.${asset.status}`) })}</p>
             )}
             <button className="ghost" onClick={reset} disabled={busy}>
-              別の資産をスキャン
+              {t("scan.scanAnother")}
             </button>
           </div>
         </div>

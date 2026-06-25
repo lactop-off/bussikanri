@@ -1,13 +1,6 @@
 import type { AssetStatus } from "./types";
 
-export const STATUS_LABEL: Record<AssetStatus, string> = {
-  available: "利用可",
-  checked_out: "貸出中",
-  under_maintenance: "メンテ中",
-  retired: "廃棄",
-  lost: "紛失",
-};
-
+// ステータスの表示名は i18n の "status.<key>" を使う（t(`status.${s}`)）。
 export const STATUS_CLASS: Record<AssetStatus, string> = {
   available: "ok",
   checked_out: "busy",

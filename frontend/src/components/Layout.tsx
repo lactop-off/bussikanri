@@ -1,20 +1,22 @@
 import { ReactNode, useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth, canManage } from "../auth";
+import { useT } from "../i18n";
 import { offlineQueue } from "../offline";
 import NotificationBell from "./NotificationBell";
 
 const NAV = [
-  { to: "/", label: "スキャン", icon: "📷", roles: ["member", "manager", "admin"] },
-  { to: "/dashboard", label: "ホーム", icon: "🏠", roles: ["member", "manager", "admin"] },
-  { to: "/assets", label: "資産", icon: "📦", roles: ["member", "manager", "admin"] },
-  { to: "/loans", label: "貸出", icon: "📋", roles: ["member", "manager", "admin"] },
-  { to: "/audit", label: "棚卸", icon: "✅", roles: ["manager", "admin"] },
-  { to: "/manage", label: "管理", icon: "⚙️", roles: ["manager", "admin"] },
+  { to: "/", key: "nav.scan", icon: "📷", roles: ["member", "manager", "admin"] },
+  { to: "/dashboard", key: "nav.home", icon: "🏠", roles: ["member", "manager", "admin"] },
+  { to: "/assets", key: "nav.assets", icon: "📦", roles: ["member", "manager", "admin"] },
+  { to: "/loans", key: "nav.loans", icon: "📋", roles: ["member", "manager", "admin"] },
+  { to: "/audit", key: "nav.audit", icon: "✅", roles: ["manager", "admin"] },
+  { to: "/manage", key: "nav.manage", icon: "⚙️", roles: ["manager", "admin"] },
 ];
 
 export default function Layout({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
+  const { t, locale, setLocale } = useT();
   const loc = useLocation();
   const [queued, setQueued] = useState(offlineQueue.count());
   const [online, setOnline] = useState(navigator.onLine);
@@ -40,12 +42,19 @@ export default function Layout({ children }: { children: ReactNode }) {
       <header className="topbar">
         <span className="brand">Karidasu</span>
         <div className="topbar-right">
-          {!online && <span className="badge offline">オフライン</span>}
-          {queued > 0 && <span className="badge pending">保留中 {queued}</span>}
+          {!online && <span className="badge offline">{t("top.offline")}</span>}
+          {queued > 0 && <span className="badge pending">{t("top.pending", { n: queued })}</span>}
           <NotificationBell />
+          <button
+            className="link-btn lang"
+            onClick={() => setLocale(locale === "ja" ? "en" : "ja")}
+            aria-label="Language"
+          >
+            {locale === "ja" ? "EN" : "日本語"}
+          </button>
           <span className="user">{user?.name}</span>
           <button className="link-btn" onClick={logout}>
-            ログアウト
+            {t("top.logout")}
           </button>
         </div>
       </header>
@@ -56,7 +65,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           return (
           <Link key={n.to} to={n.to} className={active ? "active" : ""}>
             <span className="nav-icon">{n.icon}</span>
-            <span className="nav-label">{n.label}</span>
+            <span className="nav-label">{t(n.key)}</span>
           </Link>
           );
         })}

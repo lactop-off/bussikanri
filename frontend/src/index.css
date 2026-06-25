@@ -72,6 +72,19 @@ button:disabled {
 .link-btn.dark {
   color: var(--teal);
 }
+.link-btn.lang {
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 6px;
+  padding: 0.15rem 0.4rem;
+  font-size: 0.7rem;
+}
+.lang-toggle {
+  background: none;
+  color: var(--teal);
+  border: 1px solid var(--border);
+  width: 100%;
+  margin-top: 1rem;
+}
 
 /* ---- notification bell ---- */
 .bell {
